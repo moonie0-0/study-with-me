@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>✿ Study With Me ✿</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Pacifico&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pink:#f9c4d4;--pink2:#f4a7bb;--pink3:#e8839e;
+  --lav:#d4b8e0;--mint:#b8e0d4;
+  --text:#5a3f5a;--tl:#9a70a0;
+  --card:rgba(255,248,252,0.93);
+  --r:18px;
+}
+html,body{height:100%;overflow:hidden;font-family:'Nunito',sans-serif;color:var(--text);background:#fce4ec}
+
+/* ══ PAGE BG ══ */
+#bg-grad{position:fixed;inset:0;z-index:0;background:linear-gradient(135deg,#fce4ec,#f3e5f5,#e8f5e9);transition:background .5s}
+#bg-img{position:fixed;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;display:none}
+#bg-vid{position:fixed;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;display:none}
+#bg-ov{position:fixed;inset:0;z-index:1;background:rgba(255,235,248,0.32);backdrop-filter:blur(0.5px);transition:background .3s;pointer-events:none}
+
+/* ══ MAIN LAYOUT — timer fills everything ══ */
+#app{position:relative;z-index:3;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ══ TOPBAR ══ */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 12px;
+  background:rgba(255,248,252,0.88);
+  backdrop-filter:blur(14px);
+  border-bottom:1.5px solid rgba(244,167,187,0.2);
+  flex-shrink:0;gap:6px;
+  position:relative;z-index:20;
+}
+.topbar h1{font-family:'Pacifico',cursive;font-size:1rem;color:var(--pink2);text-shadow:1px 2px 0 #fff;white-space:nowrap}
+#clock{font-family:'Pacifico',cursive;font-size:0.72rem;color:var(--lav);white-space:nowrap}
+.tb-right{display:flex;align-items:center;gap:5px}
+.icon-btn{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--pink);background:rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;transition:all .18s;flex-shrink:0}
+.icon-btn:hover,.icon-btn.active{background:var(--pink2);border-color:var(--pink2)}
+.rec-btn{padding:3px 9px;border:1.5px solid var(--pink2);background:rgba(255,255,255,0.7);border-radius:20px;font-family:'Nunito',sans-serif;font-size:0.58rem;font-weight:800;color:var(--pink3);cursor:pointer;white-space:nowrap}
+.rec-btn.recording{background:var(--pink3);color:#fff;animation:pulse .8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* ══ TIMER SCREEN — full remaining height ══ */
+#timer-screen{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+  padding:10px 16px 16px;
+  min-height:0;
+}
+
+/* timer card background */
+#timer-card-bg{position:absolute;inset:0;z-index:0}
+#timer-bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+#timer-bg-ov{position:absolute;inset:0;background:rgba(255,240,248,0.45);transition:background .3s}
+
+/* timer content above bg */
+.timer-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;flex:1;gap:8px;min-height:0}
+
+/* mode tabs */
+.mode-tabs{display:flex;gap:6px;flex-shrink:0}
+.mode-tab{padding:5px 14px;border:1.5px solid var(--pink);background:rgba(255,255,255,0.7);border-radius:30px;font-family:'Nunito',sans-serif;font-size:0.65rem;font-weight:800;color:var(--tl);cursor:pointer;transition:all .2s;backdrop-filter:blur(6px)}
+.mode-tab.active{background:var(--pink2);border-color:var(--pink2);color:#fff}
+
+/* THE RING — fills available space */
+#ring-wrap{
+  position:relative;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+#ring-svg{display:block}
+circle.rbg{fill:none;stroke:rgba(249,220,234,0.6)}
+circle.rprog{fill:none;stroke:var(--pink2);stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke .3s}
+#timer-num{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:'Pacifico',cursive;color:var(--text);white-space:nowrap;
+  text-shadow:0 2px 12px rgba(255,255,255,0.8);
+}
+
+.pet{font-size:2.2rem;animation:pb 1.8s ease-in-out infinite;flex-shrink:0}
+.pet.idle{animation:none;opacity:0.5}
+@keyframes pb{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+/* pomo controls */
+.pomo-btns{display:flex;gap:10px;flex-shrink:0}
+.btn{padding:8px 22px;border-radius:30px;border:none;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.82rem;cursor:pointer;transition:all .18s;box-shadow:0 3px 12px rgba(180,120,180,0.15)}
+.btn-pink{background:var(--pink2);color:#fff}
+.btn-pink:hover{background:var(--pink3)}
+.btn-ghost{background:rgba(255,255,255,0.7);border:1.5px solid var(--pink);color:var(--tl);backdrop-filter:blur(6px)}
+.btn-ghost:hover{background:var(--pink);color:#fff}
+.btn-xs{padding:3px 10px;font-size:0.66rem}
+
+.dots-row{text-align:center;flex-shrink:0}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(244,167,187,0.4);margin:0 2px}
+.dot.done{background:var(--pink2)}
+
+/* timer settings row — compact */
+.timer-settings{
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+  background:rgba(255,255,255,0.55);backdrop-filter:blur(8px);
+  border-radius:30px;padding:5px 12px;
+  border:1.5px solid rgba(244,167,187,0.25);
+  flex-wrap:wrap;justify-content:center;
+}
+.ts-field{display:flex;flex-direction:column;align-items:center;gap:1px}
+.ts-field label{font-size:0.5rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--tl)}
+.ts-field input,.ts-field select{
+  width:44px;padding:2px 4px;
+  border:1.5px solid var(--pink);border-radius:8px;
+  font-family:'Nunito',sans-serif;font-size:0.68rem;
+  color:var(--text);text-align:center;
+  background:rgba(255,255,255,0.85);outline:none;
+}
+.ts-sep{width:1px;height:28px;background:rgba(244,167,187,0.3);flex-shrink:0}
+.size-row{display:flex;align-items:center;gap:5px;font-size:0.58rem;color:var(--tl);font-weight:800}
+.size-row input[type=range]{width:70px;accent-color:var(--pink2)}
+
+/* ══ FLOATING TODO ══ */
+#todo-float{
+  position:fixed;
+  bottom:16px;right:12px;
+  z-index:30;
+  width:230px;
+  max-height:55vh;
+  background:var(--card);
+  border-radius:var(--r);
+  box-shadow:0 4px 24px rgba(180,100,160,0.2);
+  border:1.5px solid rgba(244,167,187,0.25);
+  backdrop-filter:blur(16px);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  transition:all .3s cubic-bezier(.4,0,.2,1);
+}
+#todo-float.collapsed{max-height:42px}
+.todo-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 11px;flex-shrink:0;cursor:pointer;
+  border-bottom:1px solid rgba(244,167,187,0.2);
+  user-select:none;
+}
+.todo-header-title{font-size:0.65rem;font-weight:900;text-transform:uppercase;letter-spacing:1.5px;color:var(--pink2)}
+.todo-collapse-btn{font-size:0.75rem;color:var(--tl);background:none;border:none;cursor:pointer;padding:0 2px;line-height:1}
+.todo-body{display:flex;flex-direction:column;padding:8px 10px 10px;gap:7px;min-height:0;overflow:hidden;flex:1}
+.todo-in{display:flex;gap:5px;flex-shrink:0}
+.inp{flex:1;padding:5px 9px;border:1.5px solid var(--pink);border-radius:20px;font-family:'Nunito',sans-serif;font-size:0.72rem;color:var(--text);background:rgba(255,255,255,0.85);outline:none;min-width:0}
+.inp:focus{border-color:var(--pink2)}
+.todo-list{overflow-y:auto;list-style:none;flex:1;scrollbar-width:thin;scrollbar-color:var(--pink) transparent;max-height:180px}
+.ti{display:flex;align-items:center;gap:6px;padding:3px 2px;border-radius:8px;font-size:0.72rem;transition:background .15s}
+.ti:hover{background:rgba(244,167,187,0.1)}
+.tck{width:15px;height:15px;border-radius:50%;border:2px solid var(--pink2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:#fff;transition:background .2s}
+.ti.done .tck{background:var(--pink2)}
+.ti.done .ttx{text-decoration:line-through;color:var(--tl)}
+.ttx{flex:1;cursor:pointer;word-break:break-word;line-height:1.3}
+.tdl{background:none;border:none;cursor:pointer;color:#cca0b8;font-size:0.72rem;opacity:0;transition:opacity .2s;flex-shrink:0}
+.ti:hover .tdl{opacity:1}
+.pb-row{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.pb-lbl{font-size:0.6rem;color:var(--tl);white-space:nowrap}
+.pbar{height:4px;border-radius:4px;background:#f9e0ea;flex:1}
+.pfill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--pink2),var(--lav));transition:width .4s}
+
+/* ══ FLOATING LOG ══ */
+#log-float{
+  position:fixed;
+  bottom:16px;left:12px;
+  z-index:30;
+  width:200px;
+  max-height:55vh;
+  background:var(--card);
+  border-radius:var(--r);
+  box-shadow:0 4px 24px rgba(180,100,160,0.2);
+  border:1.5px solid rgba(244,167,187,0.25);
+  backdrop-filter:blur(16px);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  transition:all .3s cubic-bezier(.4,0,.2,1);
+}
+#log-float.collapsed{max-height:42px}
+.log-header{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;flex-shrink:0;cursor:pointer;border-bottom:1px solid rgba(244,167,187,0.2);user-select:none}
+.log-header-title{font-size:0.65rem;font-weight:900;text-transform:uppercase;letter-spacing:1.5px;color:var(--pink2)}
+.log-body{display:flex;flex-direction:column;padding:8px 10px 10px;gap:6px;min-height:0;overflow:hidden;flex:1}
+.log-stats{display:flex;gap:4px;flex-shrink:0}
+.sp2{flex:1;background:linear-gradient(135deg,var(--pink),var(--lav));border-radius:10px;padding:3px 5px;font-size:0.6rem;font-weight:800;color:#fff;text-align:center}
+.log-disp{flex:1;overflow-y:auto;background:rgba(255,235,248,0.5);border-radius:8px;padding:5px 7px;font-size:0.65rem;color:var(--tl);max-height:120px;scrollbar-width:thin;scrollbar-color:var(--pink) transparent}
+.le{padding:2px 0;border-bottom:1px dashed rgba(244,167,187,0.3);display:flex;gap:5px}
+.le:last-child{border-bottom:none}
+.lt{color:var(--pink2);font-weight:800;flex-shrink:0;font-size:0.6rem}
+.log-in{display:flex;gap:4px;flex-shrink:0}
+
+/* ══ SETTINGS PANEL ══ */
+#sp{
+  position:fixed;top:0;right:-360px;width:320px;height:100vh;
+  z-index:50;background:rgba(255,248,252,0.97);backdrop-filter:blur(18px);
+  border-left:1.5px solid rgba(244,167,187,0.25);
+  box-shadow:-4px 0 30px rgba(180,100,160,0.15);
+  transition:right .3s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#sp.open{right:0}
+.sp-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1.5px solid rgba(244,167,187,0.2);flex-shrink:0}
+.sp-head h2{font-family:'Pacifico',cursive;font-size:1.05rem;color:var(--pink2)}
+.sp-close{background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--tl);padding:2px 6px;border-radius:8px}
+.sp-close:hover{background:var(--pink)}
+.sp-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin;scrollbar-color:var(--pink) transparent}
+.sp-sec{font-size:0.6rem;font-weight:900;text-transform:uppercase;letter-spacing:2px;color:var(--pink2);margin-bottom:7px}
+.sound-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:8px}
+.snd-btn{padding:8px 4px;border:1.5px solid var(--pink);border-radius:10px;background:rgba(255,255,255,0.6);cursor:pointer;font-family:'Nunito',sans-serif;font-size:0.6rem;font-weight:800;color:var(--tl);text-align:center;transition:all .18s;display:flex;flex-direction:column;align-items:center;gap:2px}
+.snd-btn .emo{font-size:1.2rem}
+.snd-btn.active{background:var(--pink2);border-color:var(--pink2);color:#fff}
+.snd-btn:hover:not(.active){background:var(--pink);color:#fff;border-color:var(--pink)}
+.vol-row{display:flex;align-items:center;gap:6px;font-size:0.7rem;color:var(--tl)}
+.vol-row input[type=range]{flex:1;accent-color:var(--pink2)}
+.bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:8px}
+.bgp{height:40px;border-radius:9px;border:2.5px solid transparent;cursor:pointer;background-size:cover;transition:border-color .2s,transform .15s;position:relative;overflow:hidden}
+.bgp.active{border-color:var(--pink2);transform:scale(1.06)}
+.bgp span{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:0.5rem;font-weight:800;color:#fff;text-shadow:0 1px 3px #0007}
+.ul-row{display:flex;gap:5px;margin-bottom:7px}
+.ulbl{flex:1;padding:6px 4px;border:1.5px dashed var(--pink2);border-radius:9px;cursor:pointer;font-size:0.65rem;color:var(--tl);text-align:center;font-weight:800;display:flex;align-items:center;justify-content:center;gap:3px;transition:background .2s}
+.ulbl:hover{background:rgba(244,167,187,0.14)}
+input[type=file]{display:none}
+.yt-row{display:flex;gap:5px;margin-bottom:7px}
+.ov-row{display:flex;align-items:center;gap:6px;font-size:0.68rem;color:var(--tl);margin-bottom:5px}
+.ov-row input[type=range]{flex:1;accent-color:var(--pink2)}
+
+/* timer bg presets in settings */
+.tbp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:7px}
+.tbp{height:32px;border-radius:8px;border:2.5px solid transparent;cursor:pointer;transition:border-color .2s,transform .15s;position:relative;overflow:hidden}
+.tbp.active{border-color:var(--pink2);transform:scale(1.08)}
+.tbp span{position:absolute;bottom:1px;left:0;right:0;text-align:center;font-size:0.46rem;font-weight:800;color:#fff;text-shadow:0 1px 3px #0007}
+
+/* ══ REC MODAL ══ */
+#rec-modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(90,50,90,0.4);backdrop-filter:blur(4px)}
+#rec-modal.open{display:flex}
+.rec-card{background:rgba(255,248,252,0.97);border-radius:20px;padding:16px;width:290px;box-shadow:0 8px 40px rgba(180,100,160,0.25);border:2px solid rgba(244,167,187,0.3);display:flex;flex-direction:column;gap:9px}
+.rec-card h3{font-family:'Pacifico',cursive;font-size:1rem;color:var(--pink2);text-align:center}
+.rc-ctrls{display:flex;gap:6px;justify-content:center}
+.rt-txt{text-align:center;font-size:0.8rem;color:var(--tl);min-height:2.5em;line-height:1.5;font-weight:700}
+#dl-link{display:none;text-align:center;font-size:0.74rem;font-weight:800;color:var(--pink3);text-decoration:none;padding:5px 14px;border:1.5px solid var(--pink2);border-radius:20px}
+#dl-link:hover{background:var(--pink);color:#fff}
+.rec-tip{font-size:0.6rem;color:var(--tl);background:rgba(244,167,187,0.1);border-radius:10px;padding:8px 10px;line-height:1.5;text-align:center}
+
+/* ══ NOTIF ══ */
+.notif{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--pink2);color:#fff;padding:7px 18px;border-radius:20px;font-weight:800;font-size:0.76rem;box-shadow:0 4px 18px rgba(244,167,187,0.4);z-index:9999;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap}
+.notif.show{opacity:1}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--pink);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div id="bg-grad"></div>
+<img id="bg-img" alt="">
+<video id="bg-vid" autoplay muted loop playsinline></video>
+<div id="bg-ov"></div>
+
+<!-- SETTINGS PANEL -->
+<div id="sp">
+  <div class="sp-head">
+    <h2>⚙️ Settings</h2>
+    <button class="sp-close" onclick="closeSP()">✕</button>
+  </div>
+  <div class="sp-body">
+
+    <!-- AMBIENCE -->
+    <div>
+      <div class="sp-sec">🎵 Ambience</div>
+      <div class="sound-grid">
+        <button class="snd-btn" onclick="toggleSound('rain')" id="snd-rain"><span class="emo">🌧️</span>Rain</button>
+        <button class="snd-btn" onclick="toggleSound('cafe')" id="snd-cafe"><span class="emo">☕</span>Café</button>
+        <button class="snd-btn" onclick="toggleSound('forest')" id="snd-forest"><span class="emo">🌿</span>Forest</button>
+        <button class="snd-btn" onclick="toggleSound('waves')" id="snd-waves"><span class="emo">🌊</span>Waves</button>
+        <button class="snd-btn" onclick="toggleSound('fire')" id="snd-fire"><span class="emo">🔥</span>Fire</button>
+        <button class="snd-btn" onclick="toggleSound('white')" id="snd-white"><span class="emo">🌀</span>White</button>
+      </div>
+      <div class="vol-row"><span>🔈</span><input type="range" min="0" max="1" step="0.01" value="0.5" oninput="setVol(this.value)"><span>🔊</span></div>
+    </div>
+
+    <!-- PAGE BG -->
+    <div>
+      <div class="sp-sec">🎨 Page Background</div>
+      <div class="bg-grid">
+        <div class="bgp active" style="background:linear-gradient(135deg,#fce4ec,#f3e5f5,#e8f5e9)" onclick="setBgGrad(this,'linear-gradient(135deg,#fce4ec,#f3e5f5,#e8f5e9)')"><span>pastel</span></div>
+        <div class="bgp" style="background:linear-gradient(135deg,#fff9c4,#ffecb3)" onclick="setBgGrad(this,'linear-gradient(135deg,#fff9c4,#ffecb3)')"><span>sunny</span></div>
+        <div class="bgp" style="background:linear-gradient(135deg,#e3f2fd,#90caf9)" onclick="setBgGrad(this,'linear-gradient(135deg,#e3f2fd,#90caf9)')"><span>sky</span></div>
+        <div class="bgp" style="background:linear-gradient(135deg,#e8f5e9,#a5d6a7)" onclick="setBgGrad(this,'linear-gradient(135deg,#e8f5e9,#a5d6a7)')"><span>mint</span></div>
+        <div class="bgp" style="background:linear-gradient(135deg,#1a1a2e,#0f3460)" onclick="setBgGrad(this,'linear-gradient(135deg,#1a1a2e,#0f3460)')"><span>night</span></div>
+        <div class="bgp" style="background:linear-gradient(135deg,#3d0000,#ff8a80)" onclick="setBgGrad(this,'linear-gradient(135deg,#3d0000,#ff8a80)')"><span>sunset</span></div>
+      </div>
+      <div class="ul-row">
+        <label class="ulbl" for="bg-img-file">🖼️ Image</label>
+        <input type="file" id="bg-img-file" accept="image/*" onchange="uploadBgImg(event)">
+        <label class="ulbl" for="bg-vid-file">🎬 Video</label>
+        <input type="file" id="bg-vid-file" accept="video/*" onchange="uploadBgVid(event)">
+      </div>
+      <div class="yt-row">
+        <input class="inp" type="text" id="yt-bg-url" placeholder="YouTube link as background…" style="font-size:0.68rem" onkeydown="if(event.key==='Enter')loadYTBg()">
+        <button class="btn btn-ghost btn-xs" onclick="loadYTBg()">Set</button>
+      </div>
+      <div class="ov-row"><span>☁️ dim</span><input type="range" min="0" max="0.88" step="0.01" value="0.32" oninput="setBgOv(this.value)"></div>
+      <button class="btn btn-ghost btn-xs" style="width:100%" onclick="clearBg()">✕ Clear background</button>
+    </div>
+
+    <!-- TIMER BG -->
+    <div>
+      <div class="sp-sec">🍅 Timer Background</div>
+      <div class="tbp-grid">
+        <div class="tbp active" style="background:rgba(255,248,252,0.9);border:1.5px solid var(--pink)" onclick="setTBg(this,'default')"><span style="color:var(--tl)">none</span></div>
+        <div class="tbp" style="background:linear-gradient(135deg,#fce4ec,#f8bbd0)" onclick="setTBg(this,'linear-gradient(135deg,#fce4ec,#f8bbd0)')"><span>blush</span></div>
+        <div class="tbp" style="background:linear-gradient(135deg,#e8eaf6,#c5cae9)" onclick="setTBg(this,'linear-gradient(135deg,#e8eaf6,#c5cae9)')"><span>lav</span></div>
+        <div class="tbp" style="background:linear-gradient(135deg,#e0f7fa,#80deea)" onclick="setTBg(this,'linear-gradient(135deg,#e0f7fa,#80deea)')"><span>ice</span></div>
+        <div class="tbp" style="background:linear-gradient(135deg,#f3e5f5,#ce93d8)" onclick="setTBg(this,'linear-gradient(135deg,#f3e5f5,#ce93d8)')"><span>purple</span></div>
+        <div class="tbp" style="background:linear-gradient(135deg,#fff9c4,#fff176)" onclick="setTBg(this,'linear-gradient(135deg,#fff9c4,#fff176)')"><span>yellow</span></div>
+        <div class="tbp" style="background:linear-gradient(135deg,#1a1a2e,#0f3460)" onclick="setTBg(this,'linear-gradient(135deg,#1a1a2e,#0f3460)')"><span>night</span></div>
+        <div class="tbp" style="background:linear-gradient(135deg,#2d5016,#81c784)" onclick="setTBg(this,'linear-gradient(135deg,#2d5016,#81c784)')"><span>forest</span></div>
+      </div>
+      <div class="ul-row" style="margin-bottom:7px">
+        <label class="ulbl" for="t-img-file">🖼️ Upload image</label>
+        <input type="file" id="t-img-file" accept="image/*" onchange="uploadTBg(event)">
+        <button class="btn btn-ghost btn-xs" onclick="clearTBg()">✕ Clear</button>
+      </div>
+      <div class="ov-row"><span>☁️ dim</span><input type="range" min="0" max="0.88" step="0.01" value="0.45" oninput="setTBgOv(this.value)"></div>
+    </div>
+
+    <div class="rec-tip">💡 <b>Background recording:</b> Use your phone's built-in screen recorder (swipe down → Screen Record). The timer keeps running while you use other apps!</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:7px">
+      <h1>✿ Study With Me</h1>
+      <div id="clock"></div>
+    </div>
+    <div class="tb-right">
+      <button class="rec-btn" id="rec-toggle" onclick="openRec()">⏺ Record</button>
+      <button class="icon-btn" id="sp-btn" onclick="toggleSP()">⚙️</button>
+    </div>
+  </div>
+
+  <!-- TIMER FILLS THE REST -->
+  <div id="timer-screen">
+    <!-- BG layers for timer -->
+    <div id="timer-card-bg">
+      <img id="timer-bg-img" alt="">
+      <div id="timer-bg-ov"></div>
+    </div>
+
+    <div class="timer-content">
+      <!-- Mode tabs -->
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="setMode('focus')">Focus</button>
+        <button class="mode-tab" onclick="setMode('short')">Short Break</button>
+        <button class="mode-tab" onclick="setMode('long')">Long Break</button>
+      </div>
+
+      <!-- THE BIG RING -->
+      <div id="ring-wrap">
+        <svg id="ring-svg" width="260" height="260" viewBox="0 0 260 260">
+          <circle class="rbg" cx="130" cy="130" r="118" stroke-width="10"/>
+          <circle class="rprog" id="ring-prog" cx="130" cy="130" r="118"
+            stroke-width="10" stroke-dasharray="741.4" stroke-dashoffset="0"/>
+        </svg>
+        <div id="timer-num" style="font-size:3.2rem">25:00</div>
+      </div>
+
+      <!-- Pet -->
+      <div class="pet idle" id="pet-emoji">🐱</div>
+
+      <!-- Buttons -->
+      <div class="pomo-btns">
+        <button class="btn btn-pink" id="start-btn" onclick="toggleTimer()">Start</button>
+        <button class="btn btn-ghost" onclick="resetTimer()">Reset</button>
+      </div>
+
+      <!-- Session dots -->
+      <div class="dots-row" id="dots-row"></div>
+
+      <!-- Compact settings row -->
+      <div class="timer-settings">
+        <div class="ts-field"><label>Focus</label><input type="number" id="focus-min" value="25" min="1" max="99" onchange="updateDur()"></div>
+        <div class="ts-sep"></div>
+        <div class="ts-field"><label>Short</label><input type="number" id="short-min" value="5" min="1" max="30" onchange="updateDur()"></div>
+        <div class="ts-sep"></div>
+        <div class="ts-field"><label>Long</label><input type="number" id="long-min" value="15" min="1" max="60" onchange="updateDur()"></div>
+        <div class="ts-sep"></div>
+        <div class="ts-field"><label>Pet</label>
+          <select id="pet-sel" onchange="updatePet()" style="width:44px">
+            <option>🐱</option><option>🐶</option><option>🐰</option>
+            <option>🐸</option><option>🦊</option><option>🐻</option><option>🐼</option><option>🦋</option>
+          </select>
+        </div>
+        <div class="ts-sep"></div>
+        <div class="size-row">
+          <label style="font-size:0.5rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--tl)">Size</label>
+          <input type="range" min="120" max="340" value="260" id="ring-slider" oninput="applyRingSize(this.value)">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FLOATING TODO -->
+<div id="todo-float">
+  <div class="todo-header" onclick="toggleTodo()">
+    <span class="todo-header-title">📝 To-Do</span>
+    <button class="todo-collapse-btn" id="todo-chevron">▲</button>
+  </div>
+  <div class="todo-body" id="todo-body">
+    <div class="todo-in">
+      <input class="inp" type="text" id="todo-inp" placeholder="add task…" onkeydown="if(event.key==='Enter')addTodo()">
+      <button class="btn btn-pink btn-xs" onclick="addTodo()">+</button>
+    </div>
+    <ul class="todo-list" id="todo-list"></ul>
+    <div class="pb-row">
+      <span class="pb-lbl" id="todo-status">0/0</span>
+      <div class="pbar"><div class="pfill" id="todo-prog" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- FLOATING LOG -->
+<div id="log-float">
+  <div class="log-header" onclick="toggleLog()">
+    <span class="log-header-title">📖 Log</span>
+    <button class="todo-collapse-btn" id="log-chevron">▲</button>
+  </div>
+  <div class="log-body" id="log-body">
+    <div class="log-stats">
+      <div class="sp2" id="stat-sess">0 sess</div>
+      <div class="sp2" id="stat-time">0 min</div>
+    </div>
+    <div class="log-disp" id="log-disp">
+      <div style="text-align:center;padding:4px;font-size:0.68rem">sessions here 🌸</div>
+    </div>
+    <div class="log-in">
+      <input class="inp" type="text" id="log-inp" placeholder="note…" onkeydown="if(event.key==='Enter')addLog()" style="font-size:0.68rem">
+      <button class="btn btn-pink btn-xs" onclick="addLog()">+</button>
+    </div>
+  </div>
+</div>
+
+<!-- REC MODAL -->
+<div id="rec-modal">
+  <div class="rec-card">
+    <h3>⏺ Screen Record</h3>
+    <div class="rt-txt" id="rt-txt">Hit Start — browser will ask what to capture 🌸</div>
+    <div class="rc-ctrls">
+      <button class="btn btn-pink" id="rec-start" onclick="startRec()">⏺ Start</button>
+      <button class="btn btn-ghost" id="rec-stop" onclick="stopRec()" disabled>⏹ Stop</button>
+      <button class="btn btn-ghost" onclick="closeRec()">✕</button>
+    </div>
+    <a id="dl-link" download="study-with-me.webm">⬇️ Download Recording</a>
+    <div class="rec-tip">📱 For YouTube-style 9:16 recording while using other apps — use your <b>phone's built-in screen recorder</b> (swipe down panel → Screen Record). The timer keeps running in the background!</div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ═══ STORAGE ═══
+const LS={
+  get:(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}},
+  set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+};
+
+// ═══ CLOCK ═══
+setInterval(()=>{
+  document.getElementById('clock').textContent=
+    new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+},1000);
+document.getElementById('clock').textContent=
+  new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+// ═══ SETTINGS ═══
+function toggleSP(){const o=document.getElementById('sp').classList.toggle('open');document.getElementById('sp-btn').classList.toggle('active',o);}
+function closeSP(){document.getElementById('sp').classList.remove('open');document.getElementById('sp-btn').classList.remove('active');}
+
+// ═══ TODO FLOAT COLLAPSE ═══
+let todoOpen=true,logOpen=false;
+function toggleTodo(){
+  todoOpen=!todoOpen;
+  document.getElementById('todo-float').classList.toggle('collapsed',!todoOpen);
+  document.getElementById('todo-chevron').textContent=todoOpen?'▲':'▼';
+}
+function toggleLog(){
+  logOpen=!logOpen;
+  document.getElementById('log-float').classList.toggle('collapsed',!logOpen);
+  document.getElementById('log-chevron').textContent=logOpen?'▲':'▼';
+}
+// start log collapsed
+document.getElementById('log-float').classList.add('collapsed');
+document.getElementById('log-chevron').textContent='▼';
+
+// ═══ RING SIZE ═══
+let ringSize=260;
+function applyRingSize(sz){
+  const screen=document.getElementById('timer-screen');
+  const maxW=screen?screen.clientWidth-32:300;
+  const maxH=screen?screen.clientHeight-220:300;// leave room for other elements
+  const maxSz=Math.min(maxW,maxH,340);
+  ringSize=Math.max(120,Math.min(maxSz,parseInt(sz)));
+  const sl=document.getElementById('ring-slider');
+  if(sl&&parseInt(sl.value)!==ringSize)sl.value=ringSize;
+  const svg=document.getElementById('ring-svg');
+  if(!svg)return;
+  const r=Math.round(ringSize/2-8);
+  const circ=+(2*Math.PI*r).toFixed(2);
+  svg.setAttribute('width',ringSize);
+  svg.setAttribute('height',ringSize);
+  svg.setAttribute('viewBox',`0 0 ${ringSize} ${ringSize}`);
+  const cx=ringSize/2,cy=ringSize/2;
+  svg.querySelector('.rbg').setAttribute('cx',cx);
+  svg.querySelector('.rbg').setAttribute('cy',cy);
+  svg.querySelector('.rbg').setAttribute('r',r);
+  svg.querySelector('.rprog').setAttribute('cx',cx);
+  svg.querySelector('.rprog').setAttribute('cy',cy);
+  svg.querySelector('.rprog').setAttribute('r',r);
+  svg.querySelector('.rprog').style.strokeDasharray=circ;
+  document.getElementById('timer-num').style.fontSize=Math.round(ringSize*0.185)+'px';
+  renderTimerFace();
+}
+window.addEventListener('resize',()=>applyRingSize(ringSize));
+
+// ═══ POMODORO ═══
+let dur={focus:25*60,short:5*60,long:15*60};
+let mode='focus',tLeft=25*60,running=false,tInt=null;
+let pomoCnt=0,studySec=0;
+(()=>{const s=LS.get('swm_stats',null);if(s){pomoCnt=s.c||0;studySec=s.s||0;}})();
+function saveStats(){LS.set('swm_stats',{c:pomoCnt,s:studySec});}
+
+function updateDur(){
+  dur.focus=(parseInt(document.getElementById('focus-min').value)||25)*60;
+  dur.short=(parseInt(document.getElementById('short-min').value)||5)*60;
+  dur.long=(parseInt(document.getElementById('long-min').value)||15)*60;
+  if(!running){tLeft=dur[mode];renderTimerFace();}
+}
+function setMode(m){
+  mode=m;tLeft=dur[m];running=false;clearInterval(tInt);
+  document.getElementById('start-btn').textContent='Start';
+  document.querySelectorAll('.mode-tab').forEach((t,i)=>t.classList.toggle('active',['focus','short','long'][i]===m));
+  setPet(false);renderTimerFace();
+}
+function toggleTimer(){running?pauseTimer():startTimer();}
+function startTimer(){
+  running=true;document.getElementById('start-btn').textContent='Pause';setPet(true);
+  tInt=setInterval(()=>{tLeft--;if(tLeft<=0){timerDone();return;}renderTimerFace();},1000);
+}
+function pauseTimer(){
+  running=false;clearInterval(tInt);document.getElementById('start-btn').textContent='Resume';setPet(false);
+}
+function resetTimer(){
+  running=false;clearInterval(tInt);tLeft=dur[mode];
+  document.getElementById('start-btn').textContent='Start';setPet(false);renderTimerFace();
+}
+function timerDone(){
+  running=false;clearInterval(tInt);
+  document.getElementById('start-btn').textContent='Start';setPet(false);
+  if(mode==='focus'){
+    pomoCnt++;studySec+=dur.focus;
+    addLogEntry('🍅 Focus #'+pomoCnt+' done!');
+    saveStats();updateStats();renderDots();
+    showNotif('🎉 Focus done! Take a break~');
+    setMode(pomoCnt%4===0?'long':'short');
+  } else {showNotif('🌸 Break over! Focus time!');setMode('focus');}
+  tLeft=dur[mode];renderTimerFace();
+}
+function renderTimerFace(){
+  const el=document.getElementById('timer-num');
+  const prog=document.getElementById('ring-prog');
+  if(!el||!prog)return;
+  el.textContent=String(Math.floor(tLeft/60)).padStart(2,'0')+':'+String(tLeft%60).padStart(2,'0');
+  const r=ringSize/2-8;
+  const circ=2*Math.PI*r;
+  prog.style.strokeDasharray=circ;
+  prog.style.strokeDashoffset=circ*(1-tLeft/dur[mode]);
+  prog.style.stroke={focus:'#f4a7bb',short:'#b8e0d4',long:'#d4b8e0'}[mode];
+}
+function renderDots(){
+  let h='';for(let i=0;i<Math.max(4,pomoCnt);i++)h+=`<span class="dot ${i<pomoCnt?'done':''}"></span>`;
+  document.getElementById('dots-row').innerHTML=h;
+}
+function setPet(a){document.getElementById('pet-emoji').className='pet'+(a?'':' idle');}
+function updatePet(){document.getElementById('pet-emoji').textContent=document.getElementById('pet-sel').value;}
+function updateStats(){
+  document.getElementById('stat-sess').textContent=pomoCnt+' sess';
+  document.getElementById('stat-time').textContent=Math.round(studySec/60)+' min';
+}
+window.addEventListener('load',()=>{applyRingSize(260);renderDots();updateStats();});
+
+// ═══ TODO ═══
+let todos=LS.get('swm_todos',[]);
+function saveTodos(){LS.set('swm_todos',todos);}
+function addTodo(){
+  const inp=document.getElementById('todo-inp');
+  const tx=inp.value.trim();if(!tx)return;
+  todos.push({id:Date.now(),text:tx,done:false});
+  inp.value='';saveTodos();renderTodos();
+}
+function toggleTodoItem(id){const t=todos.find(x=>x.id===id);if(t){t.done=!t.done;saveTodos();renderTodos();}}
+function deleteTodo(id){todos=todos.filter(x=>x.id!==id);saveTodos();renderTodos();}
+function renderTodos(){
+  const ul=document.getElementById('todo-list');
+  ul.innerHTML=todos.length
+    ?todos.map(t=>`<li class="ti ${t.done?'done':''}">
+        <div class="tck" onclick="toggleTodoItem(${t.id})">${t.done?'✓':''}</div>
+        <span class="ttx" onclick="toggleTodoItem(${t.id})">${t.text}</span>
+        <button class="tdl" onclick="deleteTodo(${t.id})">✕</button>
+      </li>`).join('')
+    :'<li style="text-align:center;color:var(--tl);font-size:0.68rem;padding:8px">no tasks yet 🌸</li>';
+  const done=todos.filter(x=>x.done).length,total=todos.length;
+  document.getElementById('todo-status').textContent=`${done}/${total}`;
+  document.getElementById('todo-prog').style.width=total?(done/total*100)+'%':'0%';
+}
+renderTodos();
+
+// ═══ LOG ═══
+let logs=LS.get('swm_log',[]);
+function saveLogs(){LS.set('swm_log',logs.slice(0,100));}
+function addLog(){
+  const inp=document.getElementById('log-inp');
+  const tx=inp.value.trim();if(!tx)return;
+  addLogEntry(tx);inp.value='';
+}
+function addLogEntry(tx){
+  const time=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  logs.unshift({time,tx});saveLogs();renderLog();
+  // auto-expand log when new entry arrives
+  if(!logOpen){toggleLog();}
+}
+function renderLog(){
+  const d=document.getElementById('log-disp');
+  d.innerHTML=logs.length
+    ?logs.slice(0,30).map(e=>`<div class="le"><span class="lt">${e.time}</span><span>${e.tx}</span></div>`).join('')
+    :'<div style="text-align:center;padding:4px;font-size:0.68rem">sessions here 🌸</div>';
+}
+renderLog();
+
+// ═══ AMBIENCE ═══
+let actx=null,sounds={},vol=0.5;
+function gCtx(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();return actx;}
+function makeNoise(type){
+  const ctx=gCtx();
+  const mg=ctx.createGain();mg.gain.value=vol;mg.connect(ctx.destination);
+  const sz=ctx.sampleRate*3,buf=ctx.createBuffer(1,sz,ctx.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<sz;i++)d[i]=Math.random()*2-1;
+  const src=ctx.createBufferSource();src.buffer=buf;src.loop=true;
+  const f=ctx.createBiquadFilter();
+  if(type==='waves'){
+    const lfo=ctx.createOscillator(),lg=ctx.createGain();
+    lfo.frequency.value=0.1;lg.gain.value=300;lfo.connect(lg);
+    f.type='lowpass';f.frequency.value=500;lg.connect(f.frequency);
+    src.connect(f);f.connect(mg);src.start();lfo.start();
+    return{source:src,mg,lfo};
+  }
+  const cfg={rain:['bandpass',800],white:['lowpass',200],cafe:['peaking',1000],forest:['highpass',400],fire:['lowpass',350]};
+  f.type=cfg[type][0];f.frequency.value=cfg[type][1];
+  if(type==='cafe')f.gain.value=4;
+  src.connect(f);f.connect(mg);src.start();
+  return{source:src,mg};
+}
+function toggleSound(type){
+  if(sounds[type]){
+    sounds[type].source.stop();if(sounds[type].lfo)sounds[type].lfo.stop();
+    delete sounds[type];document.getElementById('snd-'+type).classList.remove('active');
+  }else{
+    sounds[type]=makeNoise(type);document.getElementById('snd-'+type).classList.add('active');
+  }
+}
+function setVol(v){vol=parseFloat(v);Object.values(sounds).forEach(s=>{if(s.mg)s.mg.gain.value=vol;});}
+
+// ═══ PAGE BG ═══
+function clearAllBg(){
+  const v=document.getElementById('bg-vid');v.style.display='none';v.src='';
+  const i=document.getElementById('bg-img');i.style.display='none';i.src='';
+  document.getElementById('bg-grad').style.display='block';
+  const old=document.getElementById('yt-bg-ifr');if(old)old.remove();
+}
+function setBgGrad(el,g){
+  clearAllBg();document.getElementById('bg-grad').style.background=g;
+  document.querySelectorAll('.bgp').forEach(p=>p.classList.remove('active'));el.classList.add('active');
+}
+function uploadBgImg(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{clearAllBg();document.getElementById('bg-grad').style.display='none';
+    const img=document.getElementById('bg-img');img.src=ev.target.result;img.style.display='block';
+    document.querySelectorAll('.bgp').forEach(p=>p.classList.remove('active'));showNotif('🖼️ BG set!');};
+  r.readAsDataURL(f);
+}
+function uploadBgVid(e){
+  const f=e.target.files[0];if(!f)return;
+  clearAllBg();document.getElementById('bg-grad').style.display='none';
+  const v=document.getElementById('bg-vid');v.src=URL.createObjectURL(f);v.style.display='block';
+  document.querySelectorAll('.bgp').forEach(p=>p.classList.remove('active'));showNotif('🎬 Video BG!');
+}
+function parseYT(raw){
+  if(!raw)return'';
+  try{const u=new URL(raw);if(u.hostname==='youtu.be')return u.pathname.slice(1).split('?')[0];if(u.searchParams.get('v'))return u.searchParams.get('v');}catch{}
+  const m=raw.match(/[a-zA-Z0-9_-]{11}/);return m?m[0]:'';
+}
+function loadYTBg(){
+  const vid=parseYT(document.getElementById('yt-bg-url').value.trim());
+  if(!vid){showNotif('❌ Invalid YT link');return;}
+  clearAllBg();document.getElementById('bg-grad').style.display='none';
+  const ifr=document.createElement('iframe');ifr.id='yt-bg-ifr';
+  ifr.src=`https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&mute=1&loop=1&playlist=${vid}&controls=0&disablekb=1`;
+  ifr.allow='autoplay;encrypted-media';
+  Object.assign(ifr.style,{position:'fixed',inset:'0',width:'100%',height:'100%',border:'none',zIndex:'0',pointerEvents:'none',transform:'scale(1.08)'});
+  document.body.insertBefore(ifr,document.getElementById('bg-ov'));
+  document.querySelectorAll('.bgp').forEach(p=>p.classList.remove('active'));
+  showNotif('🎬 YT BG set!');
+}
+function clearBg(){
+  clearAllBg();
+  document.getElementById('bg-grad').style.background='linear-gradient(135deg,#fce4ec,#f3e5f5,#e8f5e9)';
+  document.querySelectorAll('.bgp').forEach((p,i)=>p.classList.toggle('active',i===0));
+  document.getElementById('bg-img-file').value='';document.getElementById('bg-vid-file').value='';
+  document.getElementById('yt-bg-url').value='';
+}
+function setBgOv(v){document.getElementById('bg-ov').style.background=`rgba(255,235,248,${v})`;}
+
+// ═══ TIMER BG ═══
+function setTBg(el,val){
+  document.querySelectorAll('.tbp').forEach(p=>p.classList.remove('active'));el.classList.add('active');
+  const img=document.getElementById('timer-bg-img');img.style.display='none';img.src='';
+  document.getElementById('timer-screen').style.background=val==='default'?'':val;
+}
+function uploadTBg(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    document.getElementById('timer-screen').style.background='transparent';
+    const img=document.getElementById('timer-bg-img');img.src=ev.target.result;img.style.display='block';
+    document.querySelectorAll('.tbp').forEach(p=>p.classList.remove('active'));showNotif('🖼️ Timer BG set!');
+  };r.readAsDataURL(f);
+}
+function clearTBg(){
+  document.getElementById('timer-screen').style.background='';
+  const img=document.getElementById('timer-bg-img');img.style.display='none';img.src='';
+  document.querySelectorAll('.tbp').forEach((p,i)=>p.classList.toggle('active',i===0));
+  document.getElementById('t-img-file').value='';
+}
+function setTBgOv(v){document.getElementById('timer-bg-ov').style.background=`rgba(255,240,248,${v})`;}
+
+// ═══ RECORDER ═══
+let mRec=null,rChunks=[],rStream=null,rInt=null,rSec=0;
+async function openRec(){
+  document.getElementById('rec-modal').classList.add('open');
+  document.getElementById('dl-link').style.display='none';
+  document.getElementById('rt-txt').textContent='Hit Start — browser will ask what to capture 🌸';
+}
+function closeRec(){
+  stopRec();
+  if(rStream)rStream.getTracks().forEach(t=>t.stop());rStream=null;
+  document.getElementById('rec-modal').classList.remove('open');
+  document.getElementById('rec-toggle').classList.remove('recording');
+}
+async function startRec(){
+  rChunks=[];rSec=0;clearInterval(rInt);
+  document.getElementById('dl-link').style.display='none';
+  document.getElementById('rt-txt').textContent='Requesting screen access…';
+  try{
+    rStream=await navigator.mediaDevices.getDisplayMedia({
+      video:{width:{ideal:1080},height:{ideal:1920},frameRate:{ideal:30}},audio:true
+    });
+  }catch{
+    showNotif('❌ Screen capture cancelled');
+    document.getElementById('rt-txt').textContent='Hit Start — browser will ask what to capture 🌸';
+    return;
+  }
+  rStream.getVideoTracks()[0].onended=()=>stopRec();
+  const mt=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4']
+    .find(m=>MediaRecorder.isTypeSupported(m))||'';
+  mRec=new MediaRecorder(rStream,mt?{mimeType:mt}:{});
+  mRec.ondataavailable=e=>{if(e.data.size>0)rChunks.push(e.data);};
+  mRec.onstop=()=>{
+    const blob=new Blob(rChunks,{type:mt||'video/webm'});
+    const url=URL.createObjectURL(blob);
+    const ts=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+    const tmp=document.createElement('a');tmp.download=`study-with-me-${ts}.webm`;tmp.href=url;tmp.click();
+    const a=document.getElementById('dl-link');a.href=url;a.style.display='block';
+    document.getElementById('rt-txt').textContent='✅ Saved to Downloads! 🌸';
+    document.getElementById('rec-toggle').classList.remove('recording');
+  };
+  mRec.start(200);
+  rInt=setInterval(()=>{rSec++;
+    document.getElementById('rt-txt').textContent='⏺ '+String(Math.floor(rSec/60)).padStart(2,'0')+':'+String(rSec%60).padStart(2,'0');
+  },1000);
+  document.getElementById('rec-start').disabled=true;
+  document.getElementById('rec-stop').disabled=false;
+  document.getElementById('rec-toggle').classList.add('recording');
+}
+function stopRec(){
+  clearInterval(rInt);
+  if(mRec&&mRec.state!=='inactive')mRec.stop();
+  if(rStream)rStream.getTracks().forEach(t=>t.stop());rStream=null;
+  document.getElementById('rec-start').disabled=false;
+  document.getElementById('rec-stop').disabled=true;
+  document.getElementById('rec-toggle').classList.remove('recording');
+}
+
+// ═══ NOTIF ═══
+let nT;
+function showNotif(msg){
+  const el=document.getElementById('notif');el.textContent=msg;el.classList.add('show');
+  clearTimeout(nT);nT=setTimeout(()=>el.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
